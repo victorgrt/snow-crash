@@ -1,27 +1,40 @@
-▐▓▌   ▐▓▓▓▓▌▐▓▌▐▓▌▐▓▓▓▓▌▐▓▌   ▐▓▓▓▓▌▐▓▓▓▓▌
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌▐▓▌
-▐▓▌   ▐▓▓▓▌ ▐▓▌▐▓▌▐▓▓▓▌ ▐▓▌   ▐▓▌▐▓▌▐▓▌▐▓▌
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌▐▓▌
-▐▓▓▓▓▌▐▓▓▓▓▌ ▐▓▓▌ ▐▓▓▓▓▌▐▓▓▓▓▌▐▓▓▓▓▌▐▓▓▓▓▌
+# Level00
 
-exploit: cezar cypher
+**Exploit:** Caesar cipher
 
-=======
-Using the following command ```find . / -user flag00''' we can find all files where flag00 has access. 
-We find the following:
+The stored string is shifted through the alphabet; reversing the shift reveals the password for `flag00`.
+
+## Walkthrough
+
+Find files owned by `flag00`:
+
+```bash
+find . / -user flag00
+```
+
+to see it clearly without stderr(here permission denied) from terminal to /dev/null:
+
+```bash
+find . / -user flag00 2>/dev/null
+```
+
+The search finds:
+
+```text
 /rofs/usr/sbin/john
 /usr/sbin/john
+```
 
-And when inspecting the content we get '''cdiiddwpgswtgt'''
+The file contains the string `cdiiddwpgswtgt`. It does not look like a hash, so test whether it is a Caesar cipher.
 
-It doesn't look like a hash and because we are in early levels we can guess that it is probably something like a simple cezar cypher.
-Reminder of what cezar cypher is:
-Key: +2
+In a Caesar cipher, each letter is shifted by a fixed number of positions. For example:
+
+```text
+Key: -2
 Original: helloworld
-Hashed:   fcjjmumpjb
+Encoded:  fcjjmumpjb
+```
 
-It is easily reverseable but let's use the following website:
-https://www.dcode.fr/caesar-cipher
+The string decodes to `nottoohardhere`. A [Caesar cipher decoder](https://www.dcode.fr/caesar-cipher) can confirm the result.
 
-We get the following: '''nottoohardhere'''
-It works to su flag00 and we can get the flag.
+Use the recovered password to switch to `flag00`, then run `getflag`.

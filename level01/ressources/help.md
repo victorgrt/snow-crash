@@ -1,21 +1,29 @@
-▐▓▌   ▐▓▓▓▓▌▐▓▌▐▓▌▐▓▓▓▓▌▐▓▌   ▐▓▓▓▓▌▐▓▓▌ 
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌   ▐▓▌▐▓▌ ▐▓▌ 
-▐▓▌   ▐▓▓▓▌ ▐▓▌▐▓▌▐▓▓▓▌ ▐▓▌   ▐▓▌▐▓▌ ▐▓▌ 
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌   ▐▓▌▐▓▌ ▐▓▌ 
-▐▓▓▓▓▌▐▓▓▓▓▌ ▐▓▓▌ ▐▓▓▓▓▌▐▓▓▓▓▌▐▓▓▓▓▌▐▓▓▓▌
+# Level 01
 
-exploit: decrypt hashed password using John The Ripper
+**Exploit:** Offline password hash cracking
 
-=======
-We have no file in level02 and no permission for flag01. We must look elsewhere.
+The password hash in `/etc/passwd` can be cracked offline to recover the login password for `flag01`.
 
-Let's look at a specific file: /etc/passwd (The /etc/passwd file is a plain-text database that stores local user account metadata on Unix-like operating systems) and we find:
+## Walkthrough
+
+There is no useful file in the level directory, so inspect `/etc/passwd`. On this system, it contains the following account entry:
+
+```text
 flag01:42hDRfypTqqnw:3001:3001::/home/flag/flag01:/bin/bash
+```
 
-During level00 we saw an executable called john (John The Ripper) so let's try that. 
-To do that let's '''echo '42hDRfypTqqnw' > password.txt'''
+The second field is a password hash. The `/usr/sbin/john` executable found in level 00 identifies John the Ripper as the intended tool. Install John outside the VM, save the hash to `password.txt`, and run:
+
+```bash
+john password.txt
 john --show password.txt
+```
+
+Output:
+
+```text
 ?:abcdefg
 1 password hash cracked, 0 left
+```
 
-It is indeed the password of flag01.
+Use the recovered password to switch to `flag01`, then run `getflag`.

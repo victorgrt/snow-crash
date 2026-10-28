@@ -1,26 +1,42 @@
-▐▓▌   ▐▓▓▓▓▌▐▓▌▐▓▌▐▓▓▓▓▌▐▓▌   ▐▓▓▌ ▐▓▓▓▓▌
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌    ▐▓▌ ▐▓▌▐▓▌
-▐▓▌   ▐▓▓▓▌ ▐▓▌▐▓▌▐▓▓▓▌ ▐▓▌    ▐▓▌ ▐▓▌▐▓▌
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌    ▐▓▌ ▐▓▌▐▓▌
-▐▓▓▓▓▌▐▓▓▓▓▌ ▐▓▓▌ ▐▓▓▓▓▌▐▓▓▓▓▌▐▓▓▓▌▐▓▓▓▓▌
+# Level10
 
-exploit: open / access race
+**Exploit:** TOCTOU race condition (symlink race)
 
-=======
-We have a file and a token.
+The program checks a file and opens it later; switching a symlink between those steps can make it open the protected `token` file.
 
-strings ./level09 token
+## Walkthrough
+
+Inspect the binary strings to identify the port it uses:
+
+```bash
+strings ./level10 token
+```
+
+Output:
+
+```text
 Connecting to %s:6969 .. 
-We know that the program is trying to connect to this port but the port is not active in ss -tlnp.
+```
+The program connects to port `6969`, but no service is listening there. Start a listener with `nc`.
 
-I guess we have to emulate it using nc for exemple.
+The permission check and file open happen at different times. `linker.sh` repeatedly switches a file between a regular file and a symlink to `token`, while `spammer.sh` repeatedly runs the vulnerable program. This creates a chance for the program to open `token` after checking a different file.
 
-There is a mismatch in when the file gets opened versus the permission check. We can create a race condition that would buypass the permission check and give us the content of token.
+Use three SSH sessions. Start a listener in the first:
 
-For that we have to create two scripts: linker.sh and spammer.sh
-linker.sh is going to delete, create and symbolic link with token.
-Meanwhile we are going to have spammer.sh spam the program with the link so that eventually a race happens and we get to receive the content of token.
+```bash
+nc -lk 6969
+```
 
-For that we need three terminal connected via ssh:
-On the first let's launch nc -lk 6969
-Then launch linker then finally spammer. Eventually we are going to receive the content of token in the nc -lk 6969 session.
+Run the link-switching script in the second:
+
+```bash
+./linker.sh
+```
+
+Run the program repeatedly in the third:
+
+```bash
+./spammer.sh
+```
+
+When the race succeeds, the token contents appear in the listener session.

